@@ -2,52 +2,44 @@ import express from 'express';
 import db_config from '../db/db_config.js'
 import sql from 'mssql'
 
-// import PostMessage from '../models/postMessage.js';
-
 const router = express.Router();
 
-export const getPosts = async (req, res) => {
+export const getUsers = async (req, res) => {
     try {
         let pool = await sql.connect(db_config);
-        let posts = await pool.request().query("SELECT * from tbl_posts");
-        res.status(200).json({data: posts.recordset});
+        let users = await pool.request().query("SELECT * from tbl_users");
+        res.status(200).json({data: {
+            username: users.recordset.username
+        }});
     }
     catch (error) {
         console.log(error);
     }
 }
 
-export const getPostById = async (req, res) => {
+export const getUser = async (req, res) => {
     try {
        let pool = await sql.connect(db_config);
-       let post = await pool.request().query("SELECT * from tbl_posts where id = " + req.params.id);
-       console.log(post.recordset)
-        res.status(200).json({data: post.recordset}); 
+       let user = await pool.request().query("SELECT * from tbl_users where username = '" + req.body.username + "'");
+
+       if (user.recordset.length > 0) {
+           if (user.recordset[0].password === req.body.password) {
+               const data = user.recordset[0]
+               res.status(200).json({data: {
+                     username: data.username
+               }});
+           }
+           else {
+               res.status(401).json({message: "Invalid Password"});
+           }
+       }
+       else {
+              res.status(401).json({message: "Invalid Credentials"});
+       }
     } catch (error) {
-       console.log(error) 
+        res.status(404).json({message: error.message})
     }
 }
-// export const getPosts = async (req, res) => { 
-//     try {
-//         const postMessages = await PostMessage.find();
-                
-//         res.status(200).json(postMessages);
-//     } catch (error) {
-//         res.status(404).json({ message: error.message });
-//     }
-// }
-
-// export const getPost = async (req, res) => { 
-//     const { id } = req.params;
-
-//     try {
-//         const post = await PostMessage.findById(id);
-        
-//         res.status(200).json(post);
-//     } catch (error) {
-//         res.status(404).json({ message: error.message });
-//     }
-// }
 
 // export const createPost = async (req, res) => {
 //     const { title, message, selectedFile, creator, tags } = req.body;
